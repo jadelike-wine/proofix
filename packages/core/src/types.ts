@@ -180,6 +180,12 @@ export interface ProofReport {
     headCheck: OracleCheck | null;
     /** Files the fix changed that are part of the oracle. */
     oracleFilesChangedByFix: string[];
+    /**
+     * Set when a previous persisted oracle baseline exists and its digest
+     * differs — i.e. the test surface was re-baselined. The rebaseline event
+     * itself is recorded in `.proofix/oracle-history.jsonl`.
+     */
+    rebaselined: { previousDigest: string; previousFrozenAt: string } | null;
   };
   stages: {
     /** Base worktree running the frozen acceptance tests: expected `fail`. */

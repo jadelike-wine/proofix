@@ -123,6 +123,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   let manifest = null as Awaited<ReturnType<typeof freezeOracle>> | null;
   let headCheck: OracleCheck | null = null;
   let oracleFilesChangedByFix: string[] = [];
+  let rebaselined: ProofReport['oracle']['rebaselined'] = null;
   let verdict: Verdict = 'ERROR';
   let evidence: EvidenceLevel = 'none';
 
@@ -149,6 +150,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
         manifest: manifest!,
         headCheck,
         oracleFilesChangedByFix,
+        rebaselined,
       },
       stages,
       reproduce: reproduceCommand(options),
@@ -186,6 +188,42 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
       extraGlobs: options.freeze,
     });
     log(`oracle frozen: ${manifest.files.length} test file(s), digest ${manifest.digest.slice(0, 12)}…`);
+
+    // ---- persisted baseline + audit trail ----------------------------------
+    // The frozen oracle is the contract. Persist it and append an immutable
+    // audit entry so a later run can prove whether the test surface changed.
+    {
+      const oraclePath = path.join(stateDir, 'oracle.json');
+      const historyPath = path.join(stateDir, 'oracle-history.jsonl');
+      let previous: { digest?: string; frozenAt?: string } | null = null;
+      try {
+        previous = JSON.parse(await fs.readFile(oraclePath, 'utf8')) as { digest?: string; frozenAt?: string } | null;
+      } catch {
+        /* no prior baseline */
+      }
+      if (previous?.digest && previous.digest !== manifest.digest) {
+        rebaselined = {
+          previousDigest: previous.digest,
+          previousFrozenAt: previous.frozenAt ?? 'unknown',
+        };
+        reasons.push(
+          `oracle re-baselined: test surface changed since the previous baseline ` +
+            `(${previous.digest.slice(0, 12)}… @ ${previous.frozenAt ?? 'unknown'} → ${manifest.digest.slice(0, 12)}…) — audit recorded`,
+        );
+      }
+      const audit = {
+        event: 'oracle-freeze',
+        at: manifest.frozenAt,
+        headSha: head.sha,
+        baseSha: base.sha,
+        digest: manifest.digest,
+        fileCount: manifest.files.length,
+        testCommand: manifest.testCommand,
+        rebaselineOf: previous?.digest ?? null,
+      };
+      await fs.writeFile(oraclePath, JSON.stringify(manifest, null, 2), 'utf8');
+      await fs.appendFile(historyPath, JSON.stringify(audit) + '\n', 'utf8');
+    }
 
     // Did the fix itself touch oracle files?
     oracleFilesChangedByFix = manifest.files

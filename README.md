@@ -5,7 +5,7 @@
 ProofFix is an open-source, local-first verification tool for coding agents. When an AI says "the bug is fixed", ProofFix *executes* the evidence:
 
 - checks out the buggy base and the candidate fix in **isolated git worktrees**,
-- freezes the acceptance tests into a **SHA-256 oracle** so the fix can't pass by editing, deleting or skipping tests,
+- freezes the acceptance tests into a **SHA-256 oracle** (persisted at `.proofix/oracle.json` with an append-only audit log in `oracle-history.jsonl`) so the fix can't pass by editing, deleting or skipping tests — and a changed test surface is always flagged as a re-baseline,
 - requires **RED on base → GREEN on head**, then runs a **negative control** and an optional **regression suite**,
 - emits a machine-readable JSON report + a self-contained HTML **Proof Report**.
 
