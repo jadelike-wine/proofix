@@ -16,6 +16,8 @@
 | DSH plugin install (E2E) | `dsh plugin --profile proofix-e2e add <tgz>` | ✅ installs into fresh profile; `dsh.profile.bundles` gains `@proofix/dsh-plugin`; `--dump-config` composes the `proofix` plugin row via `insert:` patch. Full agent-boot E2E not run (headless boot hangs on LLM init — noted honestly, plugin wiring covered by contract test + composed-tree validation) |
 | Plugin contract | `packages/dsh-plugin` vitest | ✅ 2/2 — registers `proofix_verify` + `proofix_report` against mock ctx |
 | Risk review (P2) | `packages/core` vitest `risk.test.ts` | ✅ 5/5 — auth/payments/migrations → high; CI/lockfiles → medium; plain code → low; diff-embedded credentials escalate |
+| Oracle baseline audit | `oracle-baseline.test.ts` | ✅ persisted `.proofix/oracle.json`; `oracle-history.jsonl` append-only audit; changed test surface flagged `rebaselined` with previous digest |
+| Screenshot | `scripts/screenshot.mjs` | ✅ real `docs/assets/demo-report.png` from a live demo run via headless Edge |
 
 ### Bugs found & fixed during development
 1. Demo fixture test imported `./src/cart.js` from `test/` → `ERR_MODULE_NOT_FOUND` on base; env-heuristic correctly downgraded to ERROR rather than misreporting. Fixed import to `../src/cart.js`.
