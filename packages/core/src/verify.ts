@@ -87,6 +87,9 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   log(`repo: ${root}`);
   const base = await resolveRev(root, options.base);
   const head = await resolveRev(root, options.head);
+  if (base.sha === head.sha) {
+    throw new ProofixError(`base and head resolve to the same commit (${base.sha.slice(0, 10)})`, 'bad-revision');
+  }
   log(`base: ${base.sha.slice(0, 10)} "${base.subject}"`);
   log(`head: ${head.sha.slice(0, 10)} "${head.subject}"`);
 
@@ -130,6 +133,12 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   const finish = async (): Promise<ProofReport> => {
     env.finishedAt = new Date().toISOString();
     env.durationMs = Date.now() - startedAt.getTime();
+    // A moved test surface always needs human acknowledgment — the baseline
+    // can change, but never silently under a VERIFIED stamp.
+    if (rebaselined && verdict === 'VERIFIED') {
+      verdict = 'NEEDS_REVIEW';
+      reasons.push('verdict downgraded: the oracle was re-baselined in this run');
+    }
     const risk = assessRisk(files, diff);
     if (risk.level === 'high' && verdict === 'VERIFIED') {
       verdict = 'NEEDS_REVIEW';
@@ -169,6 +178,11 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   };
 
   const env_ = scrubEnv(options.passEnv);
+  if (options.passEnv && options.passEnv.length > 0) {
+    reasons.push(
+      `note: ${options.passEnv.length} env var(s) explicitly allowed into test subprocesses: ${options.passEnv.join(', ')}`,
+    );
+  }
   const runStage = async (cwd: string, command: string): Promise<StageResult> =>
     stageOf(await runCommand({ command, cwd, timeoutMs, env: env_ }));
 
@@ -208,7 +222,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
         };
         reasons.push(
           `oracle re-baselined: test surface changed since the previous baseline ` +
-            `(${previous.digest.slice(0, 12)}… @ ${previous.frozenAt ?? 'unknown'} → ${manifest.digest.slice(0, 12)}…) — audit recorded`,
+            `(${previous.digest.slice(0, 12)}… @ ${previous.frozenAt ?? 'unknown'} → ${manifest.digest.slice(0, 12)}…) — requires human acknowledgment`,
         );
       }
       const audit = {
@@ -299,7 +313,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
     log('GREEN confirmed: head passes the oracle');
 
     // ---- 6. oracle integrity in head worktree -------------------------------
-    headCheck = await checkOracle(dirs.headWt, manifest);
+    headCheck = await checkOracle(dirs.headWt, manifest, options.freeze);
     if (!headCheck.intact) {
       const parts: string[] = [];
       if (headCheck.modified.length) parts.push(`modified: ${headCheck.modified.join(', ')}`);
@@ -355,6 +369,14 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
         if (ctl.outcome === 'error' || ctl.outcome === 'timeout') {
           reasons.push('negative control could not execute on base code; confidence reduced');
           evidence = 'medium';
+        } else if (looksEnvironmental(ctl.command)) {
+          // A transplanted test that CRASHES on base (missing fixture/module)
+          // is not a bug detection — do not count it as a valid control.
+          reasons.push(
+            'negative control inconclusive: the transplanted oracle fails on base for what looks like ' +
+              'environmental reasons (missing dependency/fixture), not necessarily the bug — confidence reduced',
+          );
+          evidence = 'medium';
         } else {
           reasons.push('negative control: the fix-added oracle fails on base code — it genuinely detects the bug');
           evidence = 'high';
@@ -394,6 +416,15 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
       'the frozen oracle fails on the base revision and passes on the fixed revision',
     );
     return await finish();
+  } catch (err) {
+    // Any pipeline failure produces an auditable ERROR report — never a bare
+    // throw that leaves the caller guessing whether evidence exists.
+    const msg = err instanceof Error ? err.message : String(err);
+    reasons.push(`verification aborted: ${msg}`);
+    verdict = 'ERROR';
+    const report = await finish();
+    if (err instanceof ProofixError) throw Object.assign(err, { report });
+    return report;
   } finally {
     if (!options.keepWorktrees) {
       await removeWorktree(root, dirs.baseWt).catch(() => {});

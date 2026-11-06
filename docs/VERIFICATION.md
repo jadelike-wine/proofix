@@ -21,6 +21,8 @@
 | Standalone install (E2E) | `npm install proofix-cli-0.1.0.tgz` in a clean dir → `npx proofix demo` | ✅ tarball installs with 0 deps; `demo` → VERIFIED, evidence: high. The published package will be self-contained (engine + commander + yaml bundled via esbuild) |
 | Cordis runtime mount | `packages/dsh-plugin` `cordis-mount.test.ts` | ✅ plugin mounts through the real `Context`/`ctx.plugin()` registry and registers all 3 tools |
 | `proofix oracle` CLI | `oracle --dir <demo-repo>` | ✅ prints baseline digest + freeze history |
+| Adversarial code review | independent subagent audit of `packages/core` | found 10 real issues; **fixed**: control-path crash ≠ bug detection (P0), `conftest.py`/test-config added to oracle globs (P0), `checkOracle` honors `--freeze` globs (P0), env heuristic stderr-only, `AWS_ACCESS_KEY_ID`/`DATABASE_URL`/`BEARER` env scrub, Windows `taskkill /T /F` timeout kill, manifest read failures fail loudly, oracle re-baseline → NEEDS_REVIEW, pipeline exceptions → ERROR report, base==head rejected. New `control.test.ts` pins both |
+| POSIX group-kill | `runner.ts` `detached: !isWin` | ✅ `process.kill(-pid)` now targets a real process group |
 
 ### Bugs found & fixed during development
 1. Demo fixture test imported `./src/cart.js` from `test/` → `ERR_MODULE_NOT_FOUND` on base; env-heuristic correctly downgraded to ERROR rather than misreporting. Fixed import to `../src/cart.js`.

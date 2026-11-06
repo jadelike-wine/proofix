@@ -9,7 +9,12 @@ import path from 'node:path';
 import { listFiles } from './git.js';
 import type { OracleCheck, OracleFileEntry, OracleManifest } from './types.js';
 
-/** Default git pathspec globs identifying oracle (test) files. */
+/**
+ * Default git pathspec globs identifying oracle (test) files — including the
+ * config files that can silently change what the test run means: conftest.py
+ * controls pytest fixtures, jest/vitest/mocha configs can exclude or rewrite
+ * tests, pytest.ini/pyproject/setup.cfg carry pytest settings.
+ */
 export const DEFAULT_ORACLE_GLOBS = [
   '**/*.test.*',
   '**/*.spec.*',
@@ -19,6 +24,15 @@ export const DEFAULT_ORACLE_GLOBS = [
   '**/testdata/**',
   '**/*_test.go',
   '**/test_*.py',
+  '**/conftest.py',
+  '**/conftest.*',
+  '**/jest.config.*',
+  '**/vitest.config.*',
+  '**/pytest.ini',
+  '**/tox.ini',
+  '**/.mocharc*',
+  '**/pyproject.toml',
+  '**/setup.cfg',
 ];
 
 /** sha256 of a single file; returns null when the file is missing. */
@@ -55,10 +69,20 @@ export async function freezeOracle(params: {
   const baseSet = new Set(await listFiles(params.baseDir, globs));
 
   const entries: OracleFileEntry[] = [];
+  const unreadable: string[] = [];
   for (const rel of headFiles.sort()) {
     const hashed = await hashFile(params.headDir, rel);
-    if (!hashed) continue;
+    if (!hashed) {
+      // A tracked file we cannot read is a manifest gap — fail loudly rather
+      // than silently under-covering the oracle.
+      unreadable.push(rel);
+      continue;
+    }
     entries.push({ path: rel, ...hashed, presentInBase: baseSet.has(rel) });
+  }
+  if (unreadable.length > 0) {
+    const { ProofixError } = await import('./types.js');
+    throw new ProofixError(`cannot hash oracle file(s): ${unreadable.join(', ')}`, 'io');
   }
 
   return {
@@ -73,7 +97,7 @@ export async function freezeOracle(params: {
 }
 
 /** Re-hash every manifest file inside `dir` and diff against the manifest. */
-export async function checkOracle(dir: string, manifest: OracleManifest): Promise<OracleCheck> {
+export async function checkOracle(dir: string, manifest: OracleManifest, extraGlobs: string[] = []): Promise<OracleCheck> {
   const modified: string[] = [];
   const removed: string[] = [];
   for (const entry of manifest.files) {
@@ -85,7 +109,7 @@ export async function checkOracle(dir: string, manifest: OracleManifest): Promis
     }
   }
   const manifestSet = new Set(manifest.files.map((f) => f.path));
-  const current = await listFiles(dir, DEFAULT_ORACLE_GLOBS);
+  const current = await listFiles(dir, [...DEFAULT_ORACLE_GLOBS, ...extraGlobs]);
   const added = current.filter((p) => !manifestSet.has(p));
   return {
     intact: modified.length === 0 && removed.length === 0 && added.length === 0,

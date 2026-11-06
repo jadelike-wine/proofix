@@ -14,7 +14,8 @@ const MAX_CAPTURE = 512 * 1024; // 512 KiB tail per stream
  * Strong indicators match anywhere in the name; `auth` matches as a
  * prefix or suffix (e.g. `OAUTH_TOKEN` is already caught by `token`).
  */
-const SENSITIVE_ENV = /token|secret|password|passwd|api[-_]?key|private[-_]?key|credential|(^|_)auth(_|$)/i;
+const SENSITIVE_ENV =
+  /token|secret|password|passwd|api[-_]?key|private[-_]?key|access[-_]?key|credential|bearer|cookie|session[-_]?id|conn(ection)?[-_]?str|database[-_]?url|db[-_]?url|(^|_)auth(_|$)/i;
 
 /** Build a scrubbed environment for the test subprocess. */
 export function scrubEnv(extraAllowed: string[] = []): NodeJS.ProcessEnv {
@@ -52,6 +53,9 @@ export function runCommand(params: {
       shell: isWin ? 'cmd.exe' : '/bin/sh',
       env: params.env ?? scrubEnv(),
       windowsHide: true,
+      // POSIX: make the child a process-group leader so the timeout can kill
+      // the whole group (-pid), not just the shell wrapper.
+      detached: !isWin,
     });
 
     let stdout = '';
@@ -61,16 +65,27 @@ export function runCommand(params: {
 
     const timer = setTimeout(() => {
       timedOut = true;
-      // Kill the whole process group on POSIX; on Windows kill the shell —
-      // spawned children usually die with it under cmd.exe /c semantics.
-      try {
-        if (isWin) child.kill('SIGTERM');
-        else process.kill(-child.pid!, 'SIGKILL');
-      } catch {
+      if (isWin) {
+        // Kill the whole process TREE — child.kill() would only terminate
+        // cmd.exe and orphan grandchildren (the actual test processes).
         try {
-          child.kill('SIGKILL');
+          spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
         } catch {
-          /* already dead */
+          try {
+            child.kill('SIGKILL');
+          } catch {
+            /* already dead */
+          }
+        }
+      } else {
+        try {
+          process.kill(-child.pid!, 'SIGKILL');
+        } catch {
+          try {
+            child.kill('SIGKILL');
+          } catch {
+            /* already dead */
+          }
         }
       }
     }, timeoutMs);
@@ -103,8 +118,8 @@ export function runCommand(params: {
     child.on('error', (err) => finish(null, err.message));
     child.on('close', (code) => finish(code));
 
-    // POSIX detached group kill requires the child to be a group leader.
-    if (!isWin) child.unref();
+    // POSIX: detached children keep the parent alive via the pipe handles
+    // only — no unref needed; the 'close' event still fires normally.
   });
 }
 
@@ -115,9 +130,14 @@ export function classify(result: CommandResult): RunOutcome {
   return result.exitCode === 0 ? 'pass' : 'fail';
 }
 
-/** Heuristic: does this failure look environmental rather than a real test failure? */
+/**
+ * Heuristic: does this failure look environmental rather than a real test
+ * failure? Scans stderr only — a legitimate assertion message on stdout may
+ * mention filesystem/network errors (e.g. a bug in fs-handling code) and must
+ * not be misclassified as an environment problem.
+ */
 export function looksEnvironmental(result: CommandResult): boolean {
-  const hay = `${result.stderr}\n${result.stdout}`.toLowerCase();
+  const hay = result.stderr.toLowerCase();
   return (
     /command not found|is not recognized|enoent|econnrefused|econnreset|etimedout|network|eai_again|enotfound/.test(hay) ||
     /cannot find module|modulenotfounderror|no such file or directory/.test(hay) ||
