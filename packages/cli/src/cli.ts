@@ -214,6 +214,38 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--dir <dir>', 'state dir (default .proofix)', undefined)
     .action(cmdReport);
 
+  program
+    .command('oracle')
+    .description('show the persisted oracle baseline and freeze history')
+    .option('--dir <dir>', 'repository root (default cwd)', undefined)
+    .action(async (o: { dir?: string }) => {
+      const root = path.resolve(o.dir ?? process.cwd());
+      const stateDir = path.join(root, '.proofix');
+      try {
+        const manifest = JSON.parse(await fs.readFile(path.join(stateDir, 'oracle.json'), 'utf8'));
+        console.log(`oracle baseline (${manifest.files.length} file(s))`);
+        console.log(`  digest:   ${manifest.digest}`);
+        console.log(`  frozen:   ${manifest.frozenAt}`);
+        console.log(`  test:     ${manifest.testCommand}`);
+        if (manifest.setupCommand) console.log(`  setup:    ${manifest.setupCommand}`);
+        if (manifest.regressionCommand) console.log(`  regress:  ${manifest.regressionCommand}`);
+        for (const f of manifest.files) console.log(`  · ${f.path}  ${f.sha256.slice(0, 16)}…`);
+        try {
+          const hist = (await fs.readFile(path.join(stateDir, 'oracle-history.jsonl'), 'utf8')).trim().split('\n');
+          console.log(`\nfreeze history (${hist.length} event(s)):`);
+          for (const l of hist) {
+            const e = JSON.parse(l);
+            console.log(`  ${e.at}  digest ${e.digest.slice(0, 12)}…${e.rebaselineOf ? `  (rebaseline of ${e.rebaselineOf.slice(0, 12)}…)` : ''}`);
+          }
+        } catch {
+          console.log('\n(no freeze history yet)');
+        }
+      } catch {
+        console.error('no oracle baseline — run `proofix verify` first');
+        process.exitCode = 1;
+      }
+    });
+
   program.command('doctor').description('check that git/node/platform requirements are met').action(cmdDoctor);
 
   await program.parseAsync(argv);
