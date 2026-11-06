@@ -1,0 +1,37 @@
+{
+    "name":  "@proofix/dsh-plugin",
+    "version":  "0.1.0",
+    "description":  "ProofFix DeepSeek Harness plugin 鈥?prove a claimed bug fix inside your agent session.",
+    "license":  "MIT",
+    "type":  "module",
+    "main":  "dist/index.js",
+    "types":  "dist/index.d.ts",
+    "exports":  {
+                    ".":  {
+                              "types":  "./dist/index.d.ts",
+                              "default":  "./dist/index.js"
+                          }
+                },
+    "files":  [
+                  "dist"
+              ],
+    "scripts":  {
+                    "build":  "tsc -p tsconfig.json",
+                    "typecheck":  "tsc -p tsconfig.json --noEmit",
+                    "test":  "vitest run --passWithNoTests",
+                    "lint":  "echo \"lint: no eslint configured yet\" \u0026\u0026 exit 0"
+                },
+    "dependencies":  {
+                         "@proofix/core":  "workspace:*"
+                     },
+    "peerDependencies":  {
+                             "@deepseek-ai/cordis":  "^4.0.2",
+                             "@deepseek-ai/dsh-tools":  "\u003e=0.1.2-rc.1",
+                             "@deepseek-ai/schemastery":  "^3.18.0"
+                         },
+    "devDependencies":  {
+                            "@deepseek-ai/cordis":  "^4.0.2",
+                            "@deepseek-ai/dsh-tools":  "0.1.2-rc.1",
+                            "@deepseek-ai/schemastery":  "^3.18.6"
+                        }
+}

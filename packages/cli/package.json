@@ -1,0 +1,26 @@
+{
+    "name":  "@proofix/cli",
+    "version":  "0.1.0",
+    "description":  "ProofFix CLI 鈥?prove that a bug fix actually works.",
+    "license":  "MIT",
+    "type":  "module",
+    "bin":  {
+                "proofix":  "dist/bin.js"
+            },
+    "main":  "dist/index.js",
+    "types":  "dist/index.d.ts",
+    "files":  [
+                  "dist"
+              ],
+    "scripts":  {
+                    "build":  "tsc -p tsconfig.json",
+                    "typecheck":  "tsc -p tsconfig.json --noEmit",
+                    "test":  "vitest run --passWithNoTests",
+                    "lint":  "echo \"lint: no eslint configured yet\" \u0026\u0026 exit 0"
+                },
+    "dependencies":  {
+                         "@proofix/core":  "workspace:*",
+                         "commander":  "^12.1.0",
+                         "yaml":  "^2.6.1"
+                     }
+}

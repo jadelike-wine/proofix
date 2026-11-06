@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tgz
+.proofix/
+.DS_Store
+coverage/
