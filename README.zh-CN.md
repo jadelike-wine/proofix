@@ -1,5 +1,8 @@
 # ProofFix
 
+[![ci](https://github.com/jadelike-wine/proofix/actions/workflows/ci.yml/badge.svg)](https://github.com/jadelike-wine/proofix/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **AI 说修好了，不代表真的修好了。ProofFix 帮你验证。**
 
 ProofFix 是一个开源、本地运行的编码 Agent 验证工具。当 AI 声称“Bug 已修复”时，ProofFix 用**可复现的执行证据**来确认：
@@ -13,9 +16,24 @@ ProofFix 是一个开源、本地运行的编码 Agent 验证工具。当 AI 声
 
 ## 快速开始
 
-```bash
-npm i -g @proofix/cli        # 或 pnpm add -g @proofix/cli
+**现在即可安装（已端到端验证）：**
 
+```bash
+npm i -g https://github.com/jadelike-wine/proofix/releases/download/v0.1.0/proofix-cli-0.1.0.tgz
+proofix demo
+```
+
+从源码安装：
+
+```bash
+git clone https://github.com/jadelike-wine/proofix
+cd proofix && pnpm install && pnpm build
+node packages/cli/dist/bin.js demo
+```
+
+一旦 npm 正式发布，即可使用 `npm i -g @proofix/cli`。
+
+```bash
 proofix demo                  # 自带 buggy→fixed 示例，完整跑通验证
 
 cd your-repo
