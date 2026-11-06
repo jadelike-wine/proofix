@@ -18,6 +18,9 @@
 | Risk review (P2) | `packages/core` vitest `risk.test.ts` | ✅ 5/5 — auth/payments/migrations → high; CI/lockfiles → medium; plain code → low; diff-embedded credentials escalate |
 | Oracle baseline audit | `oracle-baseline.test.ts` | ✅ persisted `.proofix/oracle.json`; `oracle-history.jsonl` append-only audit; changed test surface flagged `rebaselined` with previous digest |
 | Screenshot | `scripts/screenshot.mjs` | ✅ real `docs/assets/demo-report.png` from a live demo run via headless Edge |
+| Standalone install (E2E) | `npm install proofix-cli-0.1.0.tgz` in a clean dir → `npx proofix demo` | ✅ tarball installs with 0 deps; `demo` → VERIFIED, evidence: high. The published package will be self-contained (engine + commander + yaml bundled via esbuild) |
+| Cordis runtime mount | `packages/dsh-plugin` `cordis-mount.test.ts` | ✅ plugin mounts through the real `Context`/`ctx.plugin()` registry and registers all 3 tools |
+| `proofix oracle` CLI | `oracle --dir <demo-repo>` | ✅ prints baseline digest + freeze history |
 
 ### Bugs found & fixed during development
 1. Demo fixture test imported `./src/cart.js` from `test/` → `ERR_MODULE_NOT_FOUND` on base; env-heuristic correctly downgraded to ERROR rather than misreporting. Fixed import to `../src/cart.js`.

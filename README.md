@@ -18,7 +18,7 @@ Coding agents confidently report "fixed" — but without an independent check, "
 ## Quick start
 
 ```bash
-npm i -g @proofix/cli        # or: pnpm add -g @proofix/cli
+npm i -g @proofix/cli        # one self-contained package, zero runtime deps
 
 proofix demo                  # self-contained buggy→fixed repo, full verification
 
@@ -82,6 +82,24 @@ dsh plugin add @proofix/dsh-plugin
 Tools exposed: `proofix_verify` (independent check), `proofix_report` (latest report), `proofix_autofix` (bounded verify-and-feedback loop — max 3 rounds per session, then hands off to the human). The agent proposing the fix can *request* verification but cannot influence the verdict or the round counter.
 
 Install verified end-to-end on DSH `0.2.2-rc.1` via `dsh plugin --profile <name> add <tarball>`; type-checked against `@deepseek-ai/cordis ^4`. The Cordis API is pre-1.0 — pin versions.
+
+## Install & uninstall
+
+```bash
+# CLI (global)
+npm i -g @proofix/cli
+npm uninstall -g @proofix/cli
+
+# CLI (project-local)
+pnpm add -D @proofix/cli
+pnpm remove @proofix/cli
+
+# DeepSeek Harness plugin
+dsh plugin add @proofix/dsh-plugin
+dsh plugin remove @proofix/dsh-plugin   # removes dependency + bundle layer
+```
+
+ProofFix writes only inside `<repo>/.proofix/` (worktrees, reports, oracle files) — delete it to remove all state.
 
 ## Repo layout
 

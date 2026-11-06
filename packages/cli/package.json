@@ -11,14 +11,16 @@
   "types": "dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly && esbuild src/bin.ts --bundle --format=esm --platform=node --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" --outfile=dist/bin.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@proofix/core": "workspace:*",
     "commander": "^12.1.0",
-    "yaml": "^2.6.1"
+    "yaml": "^2.6.1",
+    "esbuild": "^0.28.2"
   }
 }
