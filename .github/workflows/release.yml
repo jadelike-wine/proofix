@@ -22,13 +22,28 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r run build
       - run: pnpm -r run test
+      - name: check npm token
+        id: npm
+        run: |
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NPM_TOKEN is not configured — skipping npm publish. Packages are still attached to the GitHub release as installable tarballs."
+          fi
       - name: publish @proofix/cli and @proofix/dsh-plugin
+        if: steps.npm.outputs.available == 'true'
         run: |
           pnpm --filter @proofix/cli publish --access public --no-git-checks --provenance
           pnpm --filter @proofix/dsh-plugin publish --access public --no-git-checks --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: build release tarballs
+        run: |
+          pnpm --filter @proofix/cli pack --pack-destination artifacts
+          pnpm --filter @proofix/dsh-plugin pack --pack-destination artifacts
+          ls -la artifacts
       - name: create GitHub release
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" artifacts/*.tgz --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

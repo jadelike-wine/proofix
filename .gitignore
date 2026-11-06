@@ -4,3 +4,5 @@ dist/
 .proofix/
 .DS_Store
 coverage/
+
+artifacts/
