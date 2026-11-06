@@ -3,6 +3,33 @@
 ## Published
 **Repository: https://github.com/jadelike-wine/proofix** (public, MIT)
 
+## 2026-11-06 — Live LLM-driven plugin session (P1 E2E)
+
+A real agent turn, driven by a **third-party OpenAI-compatible provider** (agnes-3.0-flash via
+`llm-pi-ai`), called the plugin's tool inside DeepSeek Harness:
+
+```
+$ dsh --profile proofix-live --add-dir <demo-repo> \
+  "Use the proofix_verify tool exactly once ... repo=<demo>, base=HEAD~1, head=HEAD, test='node test/cart.test.js'"
+```
+
+Agent's verbatim report of the tool result:
+
+```
+VERIFIED (medium)
+the frozen oracle fails on the base revision and passes on the fixed revision
+negative control: base fails the frozen oracle 1× — the failure is stable
+no regression command provided; only the oracle was checked
+report: ...\.proofix\reports\2026-11-06T11-06-56-988Z-4784f4\report.html
+```
+
+This closes the previously-open item: the plugin is exercised end-to-end by a real LLM
+(no DeepSeek key required — any OpenAI-compatible provider works, configured via `llm-pi-ai`).
+
+Profile used: `~/.dsh/profiles/proofix-live` (copy of the headless template + proofix plugin +
+`agnes`/`sensenova`/`longcat`/`tokenking` provider block). Provider notes from the run:
+`sensenova` returned HTTP 429 (rpm exhausted), `agnes` required `maxTokens ≤ 65536`.
+
 ## 2026-11-06 — CI on real GitHub infrastructure
 
 | Check | Result |
