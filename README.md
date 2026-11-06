@@ -26,7 +26,8 @@ cd your-repo
 proofix init                  # writes .proofix.yml
 proofix verify \
   --base HEAD~1 \             # revision that contains the bug
-  --head HEAD \               # revision claiming the fix
+  --head HEAD \               # revision claiming the fix (must be committed —
+                            # ProofFix compares git revisions, not your dirty tree)
   --test "node test/cart.test.js" \
   --regression "pnpm test"    # optional broader suite
 ```

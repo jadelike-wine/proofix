@@ -69,7 +69,7 @@ function mergeOptions(cli: Record<string, unknown>, cfg: ProofixConfig): VerifyO
   };
 }
 
-const DEFAULT_CONFIG = `# ProofFix configuration — see https://github.com/proofix/proofix
+const DEFAULT_CONFIG = `# ProofFix configuration — see the README for all options
 # The acceptance command: exits non-zero while the bug is present.
 test: "node test/cart.test.js"
 # Optional: run once per isolated worktree before the oracle (e.g. installs).
