@@ -1,5 +1,8 @@
 # ProofFix
 
+[![ci](https://github.com/jadelike-wine/proofix/actions/workflows/ci.yml/badge.svg)](https://github.com/jadelike-wine/proofix/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Your AI fixed the bug. Now prove it.**
 
 ProofFix is an open-source, local-first verification tool for coding agents. When an AI says "the bug is fixed", ProofFix *executes* the evidence:
@@ -86,18 +89,28 @@ Install verified end-to-end on DSH `0.2.2-rc.1` via `dsh plugin --profile <name>
 
 ## Install & uninstall
 
+> **Status: source install.** The npm packages are built and publish-ready but not yet on the registry
+> (awaiting the maintainer's npm credentials). Until then, install from source:
+
 ```bash
-# CLI (global)
-npm i -g @proofix/cli
+git clone https://github.com/jadelike-wine/proofix
+cd proofix
+pnpm install && pnpm build
+node packages/cli/dist/bin.js demo          # verified end-to-end
+node packages/cli/dist/bin.js --help
+```
+
+Once published, this becomes:
+
+```bash
+npm i -g @proofix/cli      # one self-contained package, zero runtime deps
 npm uninstall -g @proofix/cli
 
-# CLI (project-local)
-pnpm add -D @proofix/cli
+pnpm add -D @proofix/cli   # or project-local
 pnpm remove @proofix/cli
 
-# DeepSeek Harness plugin
 dsh plugin add @proofix/dsh-plugin
-dsh plugin remove @proofix/dsh-plugin   # removes dependency + bundle layer
+dsh plugin remove @proofix/dsh-plugin
 ```
 
 ProofFix writes only inside `<repo>/.proofix/` (worktrees, reports, oracle files) — delete it to remove all state.
