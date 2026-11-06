@@ -1,6 +1,25 @@
 # ProofFix — Verification Log
 
-## 2026-11-06 (Round 1)
+## Published
+**Repository: https://github.com/jadelike-wine/proofix** (public, MIT)
+
+## 2026-11-06 — CI on real GitHub infrastructure
+
+| Check | Result |
+|---|---|
+| `ci` workflow, ubuntu-latest | ✅ green |
+| `ci` workflow, windows-latest | ✅ green |
+| `ci` workflow, macos-latest | ✅ green |
+| Full CI duration | 59s–84s per run |
+| CI steps | install → build → typecheck → test → `proofix demo` (end-to-end) |
+
+This is the first **real Linux + macOS verification** of the engine (all earlier runs were Windows-only).
+
+### CI bugs found and fixed (real, not cosmetic)
+1. `pnpm/action-setup@v4` declared `version: 10` while `package.json` declared `packageManager: pnpm@10.33.4` → `ERR_PNPM_BAD_PM_VERSION`. Removed the duplicate.
+2. `typecheck` ran before `build`, but `@proofix/cli` resolves `@proofix/core`'s emitted `.d.ts` → `TS2307: Cannot find module '@proofix/core'`. Reordered to build → typecheck.
+
+## 2026-11-06 (local rounds 1–23)
 
 | Check | Command | Result |
 |---|---|---|
