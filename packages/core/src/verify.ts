@@ -33,6 +33,7 @@ import type {
   EvidenceLevel,
   GitContext,
   OracleCheck,
+  OracleManifest,
   ProofReport,
   StageResult,
   Verdict,
@@ -108,6 +109,11 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
 
   const files = await changedFiles(root, base.sha, head.sha);
   const { diff, truncated: diffTruncated } = await diffBetween(root, base.sha, head.sha);
+  // Guard against reversed/unrelated revisions: head should be a descendant
+  // of base (the fix builds on the buggy commit).
+  const { git: gitRun } = await import('./git.js');
+  const ancestor = await gitRun(['merge-base', '--is-ancestor', base.sha, head.sha], { cwd: root, allowFail: true });
+  const ancestorOk = ancestor.code === 0;
   const gitCtx: GitContext = {
     repoRoot: root,
     baseRef: options.base,
@@ -122,6 +128,9 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   };
 
   const reasons: string[] = [];
+  if (!ancestorOk) {
+    reasons.push('warning: head is not a descendant of base — the fix revision may not be based on the buggy revision; evidence strength is questionable');
+  }
   const stages: ProofReport['stages'] = { red: null, green: null, control: null, regression: null };
   let manifest = null as Awaited<ReturnType<typeof freezeOracle>> | null;
   let headCheck: OracleCheck | null = null;
@@ -156,7 +165,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
       git: gitCtx,
       risk,
       oracle: {
-        manifest: manifest!,
+        manifest: manifest as OracleManifest | null,
         headCheck,
         oracleFilesChangedByFix,
         rebaselined,

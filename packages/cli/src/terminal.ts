@@ -47,7 +47,7 @@ export function renderTerminalReport(r: ProofReport): string {
   if (r.oracle.headCheck && !r.oracle.headCheck.intact) {
     lines.push(`  ${C.red}oracle integrity VIOLATED${C.reset}`);
   } else {
-    lines.push(`  ${C.dim}oracle: ${r.oracle.manifest.files.length} file(s) frozen, integrity intact${C.reset}`);
+    lines.push(`  ${C.dim}oracle: ${r.oracle.manifest ? `${r.oracle.manifest.files.length} file(s) frozen` : 'not frozen (early abort)'}, integrity intact${C.reset}`);
   }
   if (r.oracle.oracleFilesChangedByFix.length > 0) {
     lines.push(`  ${C.yellow}⚠ fix touched oracle files: ${r.oracle.oracleFilesChangedByFix.join(', ')}${C.reset}`);

@@ -42,7 +42,8 @@ ${out ? code(out.length > 8000 ? out.slice(0, 8000) + '\n…[truncated]' : out) 
 
 export function renderHtmlReport(r: ProofReport): string {
   const color = VERDICT_COLOR[r.verdict] ?? '#333';
-  const oracleRows = r.oracle.manifest.files
+  const m = r.oracle.manifest;
+  const oracleRows = (m?.files ?? [])
     .map(
       (f) =>
         `<tr><td class="mono">${esc(f.path)}</td><td class="mono small">${esc(f.sha256.slice(0, 16))}…</td><td>${f.bytes}</td><td>${f.presentInBase ? 'yes' : 'added by fix'}</td></tr>`,
@@ -121,8 +122,8 @@ ${stageBlock('REGRESSION — fixed revision', 'expected: PASS', r.stages.regress
 
 <h2 class="sec">Frozen oracle</h2>
 <div class="card">
-<p class="muted">test command: <code>${esc(r.oracle.manifest.testCommand)}</code>${r.oracle.manifest.setupCommand ? ` · setup: <code>${esc(r.oracle.manifest.setupCommand)}</code>` : ''}${r.oracle.manifest.regressionCommand ? ` · regression: <code>${esc(r.oracle.manifest.regressionCommand)}</code>` : ''}<br>
-frozen at ${esc(r.oracle.manifest.frozenAt)} · digest <span class="mono">${esc(r.oracle.manifest.digest.slice(0, 24))}…</span>
+${m ? `<p class="muted">test command: <code>${esc(m.testCommand)}</code>${m.setupCommand ? ` · setup: <code>${esc(m.setupCommand)}</code>` : ''}${m.regressionCommand ? ` · regression: <code>${esc(m.regressionCommand)}</code>` : ''}<br>
+frozen at ${esc(m.frozenAt)} · digest <span class="mono">${esc(m.digest.slice(0, 24))}…</span>` : '<p class="muted">run aborted before the oracle could be frozen</p>'}
 ${r.oracle.headCheck ? ` · post-run integrity: <strong>${r.oracle.headCheck.intact ? 'intact' : 'VIOLATED'}</strong>` : ''}</p>
 ${r.oracle.oracleFilesChangedByFix.length ? `<p class="note">⚠ the fix modified oracle files: ${r.oracle.oracleFilesChangedByFix.map(esc).join(', ')}</p>` : ''}
 <table><thead><tr><th>file</th><th>sha-256</th><th>bytes</th><th>in base</th></tr></thead><tbody>${oracleRows || '<tr><td colspan="4" class="muted">no test files matched the oracle globs</td></tr>'}</tbody></table>

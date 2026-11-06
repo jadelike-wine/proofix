@@ -175,7 +175,8 @@ export interface ProofReport {
   env: EnvInfo;
   git: GitContext;
   oracle: {
-    manifest: OracleManifest;
+    /** Null when the run aborted before the oracle could be frozen. */
+    manifest: OracleManifest | null;
     /** Integrity check performed inside the head worktree after acceptance. */
     headCheck: OracleCheck | null;
     /** Files the fix changed that are part of the oracle. */
