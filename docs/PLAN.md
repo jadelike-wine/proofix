@@ -23,21 +23,27 @@ Legend: ✅ done · 🔵 in progress · ⬜ pending
 - 🔵 verify command flags hardening (env scrub, timeouts) — implemented, needs tests
 
 ## Milestone 3 — DSH plugin (P1)
-- ⬜ `packages/dsh-plugin`: cordis plugin exporting name/inject/Config/apply
-- ⬜ tools: `proofix_verify`, `proofix_status`, `proofix_report`
-- ⬜ packaging + install instructions + compat check
+- ✅ `packages/dsh-plugin`: cordis plugin exporting name/inject/Config/apply
+- ✅ tools: `proofix_verify`, `proofix_report` (contract-tested against mock ctx)
+- ✅ packaging: esbuild bundle, self-contained tarball, `dsh.bundle.patch` insert layer
+- ✅ install E2E: `dsh plugin --profile proofix-e2e add <tgz>` → composed into profile tree (`--dump-config` shows `proofix` row). Full agent boot not exercised — headless boot hangs on LLM init in this environment; documented honestly.
+- ⬜ autofix loop tool (`proofix_autofix`, ≤3 rounds, structured failure feedback) — deferred; verify-only tools shipped
 
 ## Milestone 4 — Security & quality gates
-- ⬜ typecheck all packages in CI
-- ⬜ vitest coverage of engine + tamper cases
-- ⬜ intentionally-broken reverse tests (cheating fix → must not VERIFIED)
+- ✅ typecheck all packages strict-clean
+- ✅ 24 vitest tests: verdict paths, env scrub, all 10 adversarial benchmark cases, risk classifier
+- ✅ intentionally-broken reverse tests (tampering → NEEDS_REVIEW, deleted tests → not VERIFIED, vacuous → not VERIFIED)
 
 ## Milestone 5 — Release prep
-- ⬜ README.en.md (primary) + README.zh-CN.md, LICENSE, CONTRIBUTING, SECURITY, CHANGELOG
-- ⬜ .github issue/PR templates + CI workflow
-- ⬜ demo screenshot script
+- ✅ README.md (en, primary) + README.zh-CN.md, LICENSE, CONTRIBUTING, SECURITY, CHANGELOG
+- ✅ .github issue/PR templates + CI workflow (3 OSes)
+- ⬜ demo screenshot / artifact generation
+
+## P2 — Risk-aware review
+- ✅ `assessRisk()` in core: path-pattern classifier (auth, authz, payments, migrations, secrets, CI/CD, supply-chain, crypto, infra) + diff-content credential detection
+- ✅ gate: high-risk VERIFIED → NEEDS_REVIEW; checklist + summary in report (JSON+HTML)
 
 ## Next actions
-1. Write core unit/integration tests (oracle hashing, verdict paths, tamper detection).
-2. Build benchmark case runner (10 spec cases).
-3. Implement dsh-plugin package.
+1. Optional: `proofix_autofix` tool for the DSH plugin (bounded fix loop).
+2. Screenshot/artifact generation for README.
+3. Clean up temp research dir + commit.

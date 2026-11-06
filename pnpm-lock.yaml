@@ -40,10 +40,6 @@ importers:
         version: 2.9.1
 
   packages/dsh-plugin:
-    dependencies:
-      '@proofix/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: ^4.0.2
@@ -54,6 +50,12 @@ importers:
       '@deepseek-ai/schemastery':
         specifier: ^3.18.6
         version: 3.19.0
+      '@proofix/core':
+        specifier: workspace:*
+        version: link:../core
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
 
 packages:
 

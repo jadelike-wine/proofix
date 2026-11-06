@@ -128,6 +128,13 @@ ${r.oracle.oracleFilesChangedByFix.length ? `<p class="note">⚠ the fix modifie
 <table><thead><tr><th>file</th><th>sha-256</th><th>bytes</th><th>in base</th></tr></thead><tbody>${oracleRows || '<tr><td colspan="4" class="muted">no test files matched the oracle globs</td></tr>'}</tbody></table>
 </div>
 
+<h2 class="sec">Risk assessment</h2>
+<div class="card">
+<p><strong style="color:${r.risk.level === 'high' ? '#b91c1c' : r.risk.level === 'medium' ? '#a16207' : '#15803d'}">${r.risk.level.toUpperCase()}</strong> — ${esc(r.risk.gate.summary)}</p>
+${r.risk.gate.checklist.length ? `<ul>${r.risk.gate.checklist.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+${r.risk.hits.length ? `<table><thead><tr><th>category</th><th>level</th><th>files</th><th>reason</th></tr></thead><tbody>${r.risk.hits.map((h) => `<tr><td>${esc(h.category)}</td><td>${esc(h.level)}</td><td class="mono small">${h.files.map(esc).join('<br>') || '—'}</td><td>${esc(h.reason)}</td></tr>`).join('')}</tbody></table>` : ''}
+</div>
+
 <h2 class="sec">Changed files (base → head)</h2>
 <div class="card"><ul>${changedRows || '<li class="muted">none</li>'}</ul>
 ${r.git.diff ? `<details><summary class="muted">diff${r.git.diffTruncated ? ' (truncated)' : ''}</summary>${code(r.git.diff)}</details>` : ''}

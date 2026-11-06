@@ -40,6 +40,7 @@ import type {
 } from './types.js';
 import { ProofixError } from './types.js';
 import { renderHtmlReport } from './html.js';
+import { assessRisk } from './risk.js';
 
 export const PROOFIX_VERSION = '0.1.0';
 
@@ -128,6 +129,13 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
   const finish = async (): Promise<ProofReport> => {
     env.finishedAt = new Date().toISOString();
     env.durationMs = Date.now() - startedAt.getTime();
+    const risk = assessRisk(files, diff);
+    if (risk.level === 'high' && verdict === 'VERIFIED') {
+      verdict = 'NEEDS_REVIEW';
+      reasons.push('high-risk surface detected — evidence attached, but human review is required before merge');
+    } else if (risk.level !== 'low') {
+      reasons.push(`risk: ${risk.gate.summary}`);
+    }
     const report: ProofReport = {
       schema: 'proofix.report/v1',
       tool: { name: 'proofix', version: PROOFIX_VERSION },
@@ -136,6 +144,7 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
       reasons,
       env,
       git: gitCtx,
+      risk,
       oracle: {
         manifest: manifest!,
         headCheck,

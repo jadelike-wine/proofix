@@ -191,6 +191,8 @@ export interface ProofReport {
     /** Regression suite on the head worktree. */
     regression: StageResult | null;
   };
+  /** Risk assessment of the changed surface (P2). */
+  risk: import('./risk.js').RiskAssessment;
   /** The command line that can reproduce this run. */
   reproduce: string;
   /** Absolute paths of generated artifacts. */

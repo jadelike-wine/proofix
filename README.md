@@ -58,6 +58,10 @@ head worktree  ──► regression suite  ──► must PASS        (optional,
 
 Anything ambiguous degrades to `INCONCLUSIVE`/`ERROR` — ProofFix never upgrades weak evidence to `VERIFIED`.
 
+## Risk-aware review
+
+ProofFix classifies every file the fix touches — auth, permissions, payments, migrations, secrets, CI/CD, dependencies — into `low`/`medium`/`high` risk. A `VERIFIED` verdict on a **high-risk** surface is downgraded to `NEEDS_REVIEW`: ProofFix attaches the evidence but never auto-approves merges or deploys on sensitive code.
+
 ## Safety
 
 - Test commands run **only inside dedicated git worktrees** under `.proofix/worktrees`, never in your working tree.

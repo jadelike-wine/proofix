@@ -1,0 +1,4 @@
+# ProofFix plugin profile layer — appends the proofix plugin row to the tree.
+- insert:
+    - id: proofix
+      name: "@proofix/dsh-plugin"

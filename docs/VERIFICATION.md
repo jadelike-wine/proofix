@@ -13,9 +13,14 @@
 | Benchmark §7 | `npx vitest run test/benchmark.test.ts` | ✅ 10/10 — real fix VERIFIED; non-fix FAILED; test edit NEEDS_REVIEW; test deletion not-VERIFIED; no-bug INCONCLUSIVE; env ERROR; flaky not-VERIFIED; regression FAILED; unreproducible INCONCLUSIVE; vacuous-test not-VERIFIED |
 | Typecheck | `pnpm -r run typecheck` | ✅ all 3 packages strict-clean |
 | DSH plugin load | `node -e "import('./dist/index.js')"` | ✅ exports name/inject/Config/apply; compiles against `@deepseek-ai/cordis 4.1.0` + `dsh-tools 0.1.2-rc.1` type declarations |
+| DSH plugin install (E2E) | `dsh plugin --profile proofix-e2e add <tgz>` | ✅ installs into fresh profile; `dsh.profile.bundles` gains `@proofix/dsh-plugin`; `--dump-config` composes the `proofix` plugin row via `insert:` patch. Full agent-boot E2E not run (headless boot hangs on LLM init — noted honestly, plugin wiring covered by contract test + composed-tree validation) |
+| Plugin contract | `packages/dsh-plugin` vitest | ✅ 2/2 — registers `proofix_verify` + `proofix_report` against mock ctx |
+| Risk review (P2) | `packages/core` vitest `risk.test.ts` | ✅ 5/5 — auth/payments/migrations → high; CI/lockfiles → medium; plain code → low; diff-embedded credentials escalate |
 
 ### Bugs found & fixed during development
 1. Demo fixture test imported `./src/cart.js` from `test/` → `ERR_MODULE_NOT_FOUND` on base; env-heuristic correctly downgraded to ERROR rather than misreporting. Fixed import to `../src/cart.js`.
 2. Final verdict stayed `ERROR` after a fully successful pipeline (initial value returned early). Fixed by setting `VERIFIED` unconditionally once all stages pass.
 3. `package.json` files gained UTF-8 BOM via a PowerShell edit → broke vite PostCSS config loading under vitest. Stripped.
 4. Flaky benchmark test needed `FAILED` as an honest outcome (flaky fail on green), not just INCONCLUSIVE.
+5. Plugin tarball pulled workspace dep `@proofix/core` from registry → 404. Fixed by bundling the engine into `dist/index.js` via esbuild (`@deepseek-ai/*` external); `dependencies: {}` — self-contained tarball.
+6. `dsh.bundle.patch` semantics: entries need `insert:` list to append plugin rows (id-only entries patch *existing* rows). Verified via `--dump-config` schema + actual compose.
