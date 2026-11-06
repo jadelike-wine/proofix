@@ -89,27 +89,27 @@ Install verified end-to-end on DSH `0.2.2-rc.1` via `dsh plugin --profile <name>
 
 ## Install & uninstall
 
-> **Status: source install.** The npm packages are built and publish-ready but not yet on the registry
-> (awaiting the maintainer's npm credentials). Until then, install from source:
+**Install now (verified end-to-end):**
+
+```bash
+npm i -g https://github.com/jadelike-wine/proofix/releases/download/v0.1.0/proofix-cli-0.1.0.tgz
+proofix demo
+```
+
+From source:
 
 ```bash
 git clone https://github.com/jadelike-wine/proofix
-cd proofix
-pnpm install && pnpm build
-node packages/cli/dist/bin.js demo          # verified end-to-end
-node packages/cli/dist/bin.js --help
+cd proofix && pnpm install && pnpm build
+node packages/cli/dist/bin.js demo
 ```
 
-Once published, this becomes:
+Once the npm registry release lands (`npm i -g @proofix/cli`), the same commands work under the
+plain package name. Uninstall either way:
 
 ```bash
-npm i -g @proofix/cli      # one self-contained package, zero runtime deps
 npm uninstall -g @proofix/cli
-
-pnpm add -D @proofix/cli   # or project-local
 pnpm remove @proofix/cli
-
-dsh plugin add @proofix/dsh-plugin
 dsh plugin remove @proofix/dsh-plugin
 ```
 
