@@ -26,6 +26,26 @@ report: ...\.proofix\reports\2026-11-06T11-06-56-988Z-4784f4\report.html
 This closes the previously-open item: the plugin is exercised end-to-end by a real LLM
 (no DeepSeek key required — any OpenAI-compatible provider works, configured via `llm-pi-ai`).
 
+## 2026-11-06 — `/proofix` slash command
+
+The plugin now registers `ctx.commands` — a user-facing `/proofix` command visible in the
+chat command picker. It runs the engine directly (no LLM involvement in the verdict):
+
+- `/proofix` → usage
+- `/proofix report` → latest report for the session repo
+- `/proofix <test…>` → verify `HEAD~1 → HEAD`
+- `/proofix <base> <head> -- <test…>` → explicit revisions (plus `--setup/--regression/--control-runs`)
+
+Verified: `ctx.commands.register` is called under a real Cordis mount
+(`cordis-mount.test.ts`) and the command is present in the installed `dist/index.js`.
+
+## A full custom UI button — possible, not built
+
+DSH supports client-side UI plugins (`dsh.client.platform: web`, UMD `client.js`,
+`@deepseek-ai/dsh-client-ui-slots` slot registry). Building a custom React button + form
+is feasible but a separate, larger project — `/proofix` in the command picker is the
+built-in, low-cost UI surface we ship today.
+
 Profile used: `~/.dsh/profiles/proofix-live` (copy of the headless template + proofix plugin +
 `agnes`/`sensenova`/`longcat`/`tokenking` provider block). Provider notes from the run:
 `sensenova` returned HTTP 429 (rpm exhausted), `agnes` required `maxTokens ≤ 65536`.
