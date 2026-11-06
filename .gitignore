@@ -1,5 +1,10 @@
 node_modules/
+
+# Build output — except the DSH plugin, whose dist is committed so the package
+# can be installed straight from the git URL (see README "Install").
 dist/
+!/packages/dsh-plugin/dist/
+
 *.tgz
 .proofix/
 .DS_Store

@@ -21,6 +21,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Build first: @proofix/cli resolves @proofix/core's emitted .d.ts.
       - run: pnpm -r run build
+      # packages/dsh-plugin/dist is committed so the plugin can be installed
+      # straight from the git URL. Fail if it drifts from the sources.
+      - name: plugin dist is up to date with its sources
+        if: matrix.os == 'ubuntu-latest'
+        run: git diff --exit-code -- packages/dsh-plugin/dist
       - run: pnpm -r run typecheck
       - run: pnpm -r run test
       - name: demo verification (end-to-end)
