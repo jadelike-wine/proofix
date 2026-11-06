@@ -4,6 +4,12 @@
   "private": true,
   "description": "Your AI fixed the bug. Now prove it. — Local, verifiable bug-fix verification for coding agents.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadelike-wine/proofix.git"
+  },
+  "homepage": "https://github.com/jadelike-wine/proofix#readme",
+  "bugs": "https://github.com/jadelike-wine/proofix/issues",
   "type": "module",
   "engines": {
     "node": ">=18.17"
