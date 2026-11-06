@@ -34,6 +34,7 @@ describe('dsh-plugin contract', () => {
     apply(ctx as any, Config.parse ? Config.parse({}) : ({} as never));
     expect(registered).toContain('proofix_verify');
     expect(registered).toContain('proofix_report');
+    expect(registered).toContain('proofix_autofix');
     expect(sections).toContain('tool:proofix');
   });
 });

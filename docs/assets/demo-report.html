@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ProofFix Report — VERIFIED</title>
+<style>
+:root{color-scheme:light}
+*{box-sizing:border-box}
+body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;margin:0;background:#f6f7f9;color:#1f2430;line-height:1.55}
+.wrap{max-width:960px;margin:0 auto;padding:32px 24px 64px}
+header.hero{background:#fff;border:1px solid #e3e6ec;border-radius:12px;padding:28px 32px;margin-bottom:24px}
+.brand{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280}
+.verdict{font-size:44px;font-weight:800;color:#15803d;margin:4px 0 2px}
+.evidence{color:#4b5563;font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:#fff;border:1px solid #e3e6ec;border-radius:12px;padding:18px 22px}
+.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin:0 0 10px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:14px}
+dt{color:#6b7280}dd{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}
+ul{margin:6px 0;padding-left:20px}
+.stage{background:#fff;border:1px solid #e3e6ec;border-radius:12px;padding:18px 22px;margin-bottom:16px}
+.stage h3{margin:0 0 6px;font-size:16px}
+.stage.skipped{opacity:.65}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;vertical-align:middle}
+.badge.pass{background:#dcfce7;color:#15803d}
+.badge.fail{background:#fee2e2;color:#b91c1c}
+.badge.err{background:#ede9fe;color:#6d28d9}
+.expect{font-weight:400;font-size:12px;color:#6b7280}
+.code{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;overflow:auto;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;max-height:420px}
+.note{background:#fffbeb;border-left:3px solid #f59e0b;padding:8px 12px;border-radius:4px}
+.muted{color:#6b7280;font-size:13px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+.small{font-size:11px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #eceff3}
+th{color:#6b7280;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+footer{color:#9ca3af;font-size:12px;text-align:center;margin-top:32px}
+h2.sec{font-size:18px;margin:28px 0 12px}
+</style></head><body><div class="wrap">
+
+<header class="hero">
+  <div class="brand">ProofFix · Proof Report</div>
+  <div class="verdict">VERIFIED</div>
+  <div class="evidence">evidence level: <strong>high</strong> · generated 2026-11-06T09:20:13.249Z · proofix 0.1.0</div>
+</header>
+
+<div class="grid">
+  <div class="card"><h2>Revisions</h2><dl>
+    <dt>base</dt><dd>5b36f86b1a80 feat: shopping cart (with qty bug)</dd>
+    <dt>head</dt><dd>852d9d13c4f2 fix: multiply price by quantity</dd>
+    <dt>repo</dt><dd>C:/Users/silver/AppData/Local/Temp/proofix-demo-X9eMbr</dd>
+    <dt>changed</dt><dd>1 file(s)</dd>
+  </dl></div>
+  <div class="card"><h2>Environment</h2><dl>
+    <dt>platform</dt><dd>win32/x64</dd>
+    <dt>node</dt><dd>v22.23.1</dd>
+    <dt>git</dt><dd>git version 2.49.0.windows.1</dd>
+    <dt>duration</dt><dd>2.2s</dd>
+  </dl></div>
+</div>
+
+<div class="card"><h2>Why this verdict</h2><ul><li>the frozen oracle fails on the base revision and passes on the fixed revision</li><li>negative control: base fails the frozen oracle again — the failure is stable</li><li>regression suite passes on the fixed revision</li></ul></div>
+
+<h2 class="sec">Verification stages</h2>
+<section class="stage">
+<h3>RED — base revision <span class="expect">expected: FAIL</span> <span class="badge fail">FAIL</span></h3>
+<p class="note">bug reproduced on base</p>
+<p class="muted"><code>node test/cart.test.js</code> — exit 1 in 0.2s</p>
+<pre class="code ">node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: totalPrice must multiply price by quantity
+
+15 !== 35
+
+    at file:///C:/Users/silver/AppData/Local/Temp/proofix-demo-X9eMbr/.proofix/worktrees/2026-11-06T09-20-11-558Z-398a0d-base/test/cart.test.js:10:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 15,
+  expected: 35,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+</pre>
+</section>
+<section class="stage">
+<h3>GREEN — fixed revision <span class="expect">expected: PASS</span> <span class="badge pass">PASS</span></h3>
+
+<p class="muted"><code>node test/cart.test.js</code> — exit 0 in 0.1s</p>
+<pre class="code ">cart.test.js: PASS
+</pre>
+</section>
+<section class="stage">
+<h3>NEGATIVE CONTROL (baseline-rerun) <span class="expect">expected: FAIL</span> <span class="badge fail">FAIL</span></h3>
+
+<p class="muted"><code>node test/cart.test.js</code> — exit 1 in 0.1s</p>
+<pre class="code ">node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: totalPrice must multiply price by quantity
+
+15 !== 35
+
+    at file:///C:/Users/silver/AppData/Local/Temp/proofix-demo-X9eMbr/.proofix/worktrees/2026-11-06T09-20-11-558Z-398a0d-base/test/cart.test.js:10:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 15,
+  expected: 35,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+</pre>
+</section>
+<section class="stage">
+<h3>REGRESSION — fixed revision <span class="expect">expected: PASS</span> <span class="badge pass">PASS</span></h3>
+
+<p class="muted"><code>node test/cart.test.js</code> — exit 0 in 0.2s</p>
+<pre class="code ">cart.test.js: PASS
+</pre>
+</section>
+
+<h2 class="sec">Frozen oracle</h2>
+<div class="card">
+<p class="muted">test command: <code>node test/cart.test.js</code> · regression: <code>node test/cart.test.js</code><br>
+frozen at 2026-11-06T09:20:12.525Z · digest <span class="mono">31e7e41255a36dcb633d9415…</span>
+ · post-run integrity: <strong>intact</strong></p>
+
+<table><thead><tr><th>file</th><th>sha-256</th><th>bytes</th><th>in base</th></tr></thead><tbody><tr><td class="mono">test/cart.test.js</td><td class="mono small">aea5e08e9431f571…</td><td>341</td><td>yes</td></tr></tbody></table>
+</div>
+
+<h2 class="sec">Risk assessment</h2>
+<div class="card">
+<p><strong style="color:#15803d">LOW</strong> — low risk — no sensitive surfaces detected.</p>
+
+
+</div>
+
+<h2 class="sec">Changed files (base → head)</h2>
+<div class="card"><ul><li class="mono">src/cart.js</li></ul>
+<details><summary class="muted">diff</summary><pre class="code ">diff --git a/src/cart.js b/src/cart.js
+index dd350f5..e33b148 100644
+--- a/src/cart.js
++++ b/src/cart.js
+@@ -1,9 +1,8 @@
+-// cart.js — buggy version
++// cart.js — fixed version
+ export function totalPrice(items) {
+   let total = 0;
+   for (const it of items) {
+-    // BUG: forgets to multiply by quantity
+-    total += it.price;
++    total += it.price * it.qty;
+   }
+   return total;
+ }
+</pre></details>
+</div>
+
+<h2 class="sec">Reproduce</h2>
+<div class="card"><pre class="code ">proofix verify \
+  --base HEAD~1 \
+  --head HEAD \
+  --test &quot;node test/cart.test.js&quot; \
+  --regression &quot;node test/cart.test.js&quot;</pre></div>
+
+<footer>ProofFix — "Your AI fixed the bug. Now prove it." · report C:\Users\silver\AppData\Local\Temp\proofix-demo-X9eMbr\.proofix\reports\2026-11-06T09-20-11-558Z-398a0d\report.json</footer>
+</div></body></html>

@@ -33,6 +33,8 @@ proofix verify \
 
 Open the report: `proofix report --open`.
 
+![ProofFix proof report](docs/assets/demo-report.png)
+
 ## Verdicts
 
 | Verdict | Meaning |
@@ -77,7 +79,9 @@ ProofFix classifies every file the fix touches — auth, permissions, payments, 
 dsh plugin add @proofix/dsh-plugin
 ```
 
-Tested against `@deepseek-ai/cordis ^4` / DSH `0.1.2-rc.1` (the API is pre-1.0; pin versions).
+Tools exposed: `proofix_verify` (independent check), `proofix_report` (latest report), `proofix_autofix` (bounded verify-and-feedback loop — max 3 rounds per session, then hands off to the human). The agent proposing the fix can *request* verification but cannot influence the verdict or the round counter.
+
+Install verified end-to-end on DSH `0.2.2-rc.1` via `dsh plugin --profile <name> add <tarball>`; type-checked against `@deepseek-ai/cordis ^4`. The Cordis API is pre-1.0 — pin versions.
 
 ## Repo layout
 
