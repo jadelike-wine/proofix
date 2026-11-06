@@ -63,6 +63,7 @@ function mergeOptions(cli: Record<string, unknown>, cfg: ProofixConfig): VerifyO
     timeoutMs: opt('timeout', cfg.timeoutMs),
     allowTestChanges: opt('allowTestChanges', cfg.allowTestChanges) ?? false,
     negativeControl: cli.noNegativeControl === true ? false : true,
+    controlRuns: cli.controlRuns as number | undefined,
     keepWorktrees: cli.keepWorktrees === true,
     passEnv: [...(cfg.passEnv ?? []), ...((cli.passEnv as string[] | undefined) ?? [])],
     onProgress: (line) => console.error(`  · ${line}`),
@@ -207,6 +208,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--timeout <ms>', 'per-command timeout in ms', (v) => Number.parseInt(v, 10))
     .option('--allow-test-changes', 'permit the fix to edit oracle files', false)
     .option('--no-negative-control', 'skip the negative control stage')
+    .option('--control-runs <n>', 'negative control re-runs on base (default 1)', (v) => Number.parseInt(v, 10))
     .option('--keep-worktrees', 'keep .proofix/worktrees for inspection', false)
     .option('--pass-env <name>', 'env var allowed into test subprocesses (repeatable)', (v, acc: string[]) => [...acc, v], [])
     .option('--json', 'print the JSON report to stdout', false)

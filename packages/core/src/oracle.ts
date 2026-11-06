@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { listFiles } from './git.js';
+import { listFiles, lsFilesModes } from './git.js';
 import type { OracleCheck, OracleFileEntry, OracleManifest } from './types.js';
 
 /**
@@ -47,7 +47,7 @@ async function hashFile(root: string, rel: string): Promise<{ sha256: string; by
 
 function combinedDigest(entries: OracleFileEntry[]): string {
   const h = createHash('sha256');
-  for (const e of entries) h.update(`${e.path}\0${e.sha256}\0`);
+  for (const e of entries) h.update(`${e.path}\0${e.sha256}\0${e.mode ?? ''}\0`);
   return h.digest('hex');
 }
 
@@ -68,6 +68,10 @@ export async function freezeOracle(params: {
   const headFiles = await listFiles(params.headDir, globs);
   const baseSet = new Set(await listFiles(params.baseDir, globs));
 
+  // `git ls-files -s` reports the index mode (exec bit) — content hash alone
+  // misses a fix that flips how a test file is invoked.
+  const modeMap = await lsFilesModes(params.headDir, globs);
+
   const entries: OracleFileEntry[] = [];
   const unreadable: string[] = [];
   for (const rel of headFiles.sort()) {
@@ -78,7 +82,7 @@ export async function freezeOracle(params: {
       unreadable.push(rel);
       continue;
     }
-    entries.push({ path: rel, ...hashed, presentInBase: baseSet.has(rel) });
+    entries.push({ path: rel, ...hashed, mode: modeMap.get(rel), presentInBase: baseSet.has(rel) });
   }
   if (unreadable.length > 0) {
     const { ProofixError } = await import('./types.js');
@@ -106,6 +110,14 @@ export async function checkOracle(dir: string, manifest: OracleManifest, extraGl
       removed.push(entry.path);
     } else if (hashed.sha256 !== entry.sha256) {
       modified.push(entry.path);
+    }
+  }
+  // exec-bit / mode changes count as modifications
+  const modeMap = await lsFilesModes(dir, [...DEFAULT_ORACLE_GLOBS, ...extraGlobs]);
+  for (const entry of manifest.files) {
+    const currentMode = modeMap.get(entry.path);
+    if (currentMode !== undefined && entry.mode !== undefined && currentMode !== entry.mode) {
+      if (!modified.includes(entry.path)) modified.push(`${entry.path} (mode ${entry.mode}→${currentMode})`);
     }
   }
   const manifestSet = new Set(manifest.files.map((f) => f.path));

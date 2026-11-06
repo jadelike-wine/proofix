@@ -108,6 +108,22 @@ export async function removeWorktree(root: string, dir: string): Promise<void> {
   await fs.rm(dir, { recursive: true, force: true }).catch(() => {});
 }
 
+/** `git ls-files -s` — path → index mode (catches exec-bit flips). */
+export async function lsFilesModes(worktreeDir: string, patterns: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (patterns.length === 0) return map;
+  const res = await git(['ls-files', '-s', '-z', '--', ...patterns], { cwd: worktreeDir, allowFail: true });
+  if (res.code !== 0) return map;
+  for (const rec of res.stdout.split('\0').filter(Boolean)) {
+    // format: "<mode> <object> <stage>\t<path>"
+    const tab = rec.indexOf('\t');
+    if (tab === -1) continue;
+    const mode = rec.slice(0, rec.indexOf(' '));
+    map.set(rec.slice(tab + 1), mode);
+  }
+  return map;
+}
+
 /** List files in a worktree matching git's own pathspec (uses git ls-files). */
 export async function listFiles(worktreeDir: string, patterns: string[]): Promise<string[]> {
   if (patterns.length === 0) return [];

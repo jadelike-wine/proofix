@@ -346,8 +346,9 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
       const missingInBase = manifest.files.filter((f) => !f.presentInBase);
       if (missingInBase.length === 0) {
         // Oracle already exists in base: the RED run *is* the negative control.
-        // Re-run once to prove stability (guards against flaky once-failure).
-        log('CONTROL: re-running frozen oracle on base (baseline-rerun)');
+        // Re-run N times to prove stability (guards against flaky once-failure).
+        const runs = Math.max(1, options.controlRuns ?? 1);
+        log(`CONTROL: re-running frozen oracle on base (baseline-rerun ×${runs})`);
         const ctl = await runStage(dirs.baseWt, options.test);
         stages.control = { ...ctl, kind: 'baseline-rerun' };
         if (ctl.outcome === 'pass') {
@@ -360,7 +361,17 @@ export async function verify(options: VerifyOptions): Promise<ProofReport> {
           reasons.push('negative control could not be re-run; confidence reduced');
           evidence = 'medium';
         } else {
-          reasons.push('negative control: base fails the frozen oracle again — the failure is stable');
+          // extra confirmations beyond the first
+          for (let i = 1; i < runs; i++) {
+            const extra = await runStage(dirs.baseWt, options.test);
+            if (extra.outcome === 'pass') {
+              reasons.push(`negative control failed on re-run ${i + 1}: the base passed the oracle — flaky or environment-dependent`);
+              verdict = 'INCONCLUSIVE';
+              evidence = 'low';
+              return await finish();
+            }
+          }
+          reasons.push(`negative control: base fails the frozen oracle ${runs}× — the failure is stable`);
           evidence = 'high';
         }
       } else {

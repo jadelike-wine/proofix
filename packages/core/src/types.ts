@@ -62,6 +62,8 @@ export interface OracleFileEntry {
   sha256: string;
   /** File size in bytes. */
   bytes: number;
+  /** Git file mode (100644, 100755, …) — exec-bit changes alter execution. */
+  mode?: string;
   /** Whether the file existed in the base revision. */
   presentInBase: boolean;
 }
@@ -158,6 +160,8 @@ export interface VerifyOptions {
    * worktree when the acceptance tests do not exist there (default true).
    */
   negativeControl?: boolean;
+  /** How many times the negative control re-runs on the base (default 1). */
+  controlRuns?: number;
   /** Environment variable names allowed to leak into test subprocesses. */
   passEnv?: string[];
   /** Called with human-readable progress lines. */
