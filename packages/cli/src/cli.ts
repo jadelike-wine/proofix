@@ -97,6 +97,18 @@ async function cmdInit(): Promise<void> {
     console.log('created .proofix.yml — edit `test:` to your acceptance command');
   }
   await fs.mkdir(path.resolve('.proofix'), { recursive: true });
+  // .proofix/worktrees holds checkouts — suggest ignoring it; keep reports/oracle committable
+  try {
+    const gi = path.resolve('.gitignore');
+    const existing = await fs.readFile(gi, 'utf8');
+    if (!existing.includes('.proofix/worktrees')) {
+      await fs.appendFile(gi, '\n# ProofFix isolated worktrees\n.proofix/worktrees/\n', 'utf8');
+      console.log('added .proofix/worktrees/ to .gitignore');
+    }
+  } catch {
+    await fs.writeFile(path.resolve('.gitignore'), '# ProofFix isolated worktrees\n.proofix/worktrees/\n', 'utf8');
+    console.log('created .gitignore with .proofix/worktrees/');
+  }
   console.log(`next: proofix verify --base <buggy-ref> --head <fix-ref>`);
 }
 

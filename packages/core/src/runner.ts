@@ -9,8 +9,12 @@ import type { CommandResult, RunOutcome, StageResult } from './types.js';
 
 const MAX_CAPTURE = 512 * 1024; // 512 KiB tail per stream
 
-/** Env vars that must never reach an untrusted test subprocess. */
-const SENSITIVE_ENV = /(^|_)(token|secret|password|passwd|api[-_]?key|private[-_]?key|credential|auth)$/i;
+/**
+ * Env vars that must never reach an untrusted test subprocess.
+ * Strong indicators match anywhere in the name; `auth` matches as a
+ * prefix or suffix (e.g. `OAUTH_TOKEN` is already caught by `token`).
+ */
+const SENSITIVE_ENV = /token|secret|password|passwd|api[-_]?key|private[-_]?key|credential|(^|_)auth(_|$)/i;
 
 /** Build a scrubbed environment for the test subprocess. */
 export function scrubEnv(extraAllowed: string[] = []): NodeJS.ProcessEnv {
