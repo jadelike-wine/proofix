@@ -24,11 +24,19 @@ describe('cordis runtime mount', () => {
       },
       getSectionOrder: () => 0,
     });
+    const commands: string[] = [];
+    ctx.provide('commands', {
+      register(def: { name: string }) {
+        commands.push(def.name);
+        return () => {};
+      },
+    });
 
     await ctx.plugin(plugin, { timeoutMs: 60_000, keepWorktrees: false, allowTestChanges: false });
 
     expect(registered).toEqual(expect.arrayContaining(['proofix_verify', 'proofix_report', 'proofix_autofix']));
     expect(sections).toContain('tool:proofix');
+    expect(commands).toContain('proofix');
 
     // plugin exposes a fiber runtime record
     expect(ctx.registry.has(plugin as never) || true).toBe(true);

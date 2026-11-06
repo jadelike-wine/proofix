@@ -10,14 +10,15 @@ import { name, inject, apply, Config } from '../src/index.js';
 describe('dsh-plugin contract', () => {
   it('exports cordis plugin surface', () => {
     expect(name).toBe('proofix');
-    expect(inject).toEqual(['tools', 'systemPrompt']);
+    expect(inject).toEqual(['tools', 'systemPrompt', 'commands']);
     expect(typeof apply).toBe('function');
     expect(Config).toBeDefined();
   });
 
-  it('registers proofix_verify and proofix_report tools', () => {
+  it('registers proofix tools, prompt section, and /proofix command', () => {
     const registered: string[] = [];
     const sections: string[] = [];
+    const commands: string[] = [];
     const ctx = {
       tools: {
         register: (def: { name: string }) => {
@@ -29,6 +30,11 @@ describe('dsh-plugin contract', () => {
           sections.push(s.name);
         },
       },
+      commands: {
+        register: (def: { name: string }) => {
+          commands.push(def.name);
+        },
+      },
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     apply(ctx as any, Config.parse ? Config.parse({}) : ({} as never));
@@ -36,5 +42,6 @@ describe('dsh-plugin contract', () => {
     expect(registered).toContain('proofix_report');
     expect(registered).toContain('proofix_autofix');
     expect(sections).toContain('tool:proofix');
+    expect(commands).toContain('proofix');
   });
 });

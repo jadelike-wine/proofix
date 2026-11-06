@@ -8,6 +8,7 @@
  * @module @proofix/dsh-plugin
  */
 import type { Context } from '@deepseek-ai/cordis';
+import type { CommandInvocation } from '@deepseek-ai/dsh-commands';
 import z from '@deepseek-ai/schemastery';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { verify } from '@proofix/core';
@@ -15,7 +16,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const name = 'proofix';
-export const inject = ['tools', 'systemPrompt'];
+export const inject = ['tools', 'systemPrompt', 'commands'];
 
 export interface Config {
   /** Per-command timeout for test execution (default 10 min, capped at 30). */
@@ -283,4 +284,95 @@ export function apply(ctx: Context, config: Config): void {
       presentCall: (args) => ({ card: 'generic', title: `ProofFix autofix round (${args.base} → ${args.head ?? 'HEAD'})`, kind: 'execute', rawInput: args.bug as string | undefined }),
     }),
   );
+
+  // ---- /proofix slash command --------------------------------------------------
+  // The command runs the engine itself — the verdict is engine-computed,
+  // never decided by the model. Grammar:
+  //   /proofix                       usage
+  //   /proofix report                show the latest report for the session repo
+  //   /proofix <test...>             verify HEAD~1 → HEAD
+  //   /proofix <base> <head> -- <test...>  explicit revisions
+  ctx.commands.register({
+    name: 'proofix',
+    description: 'Verify a bug fix: frozen acceptance tests must FAIL on base and PASS on head — verdict computed by execution, not the model.',
+    input: { hint: '[<base> <head> --] <test command>   e.g. /proofix HEAD~1 HEAD -- "node test/m.test.js"' },
+    async handler(inv: CommandInvocation) {
+      const repo = process.cwd();
+      const input = inv.rawInput.trim();
+      if (input.length === 0) {
+        return {
+          kind: 'success' as const,
+          text:
+            'Usage:\n  /proofix <test…>                     verify HEAD~1 → HEAD\n' +
+            '  /proofix <base> <head> -- <test…>    verify explicit revisions\n' +
+            '  /proofix report                      show the latest proof report\n' +
+            'Options: --setup <cmd> --regression <cmd> --control-runs <n>',
+        };
+      }
+      if (input === 'report') {
+        try {
+          const latest = JSON.parse(await fs.readFile(path.join(repo, '.proofix', 'reports', 'latest.json'), 'utf8'));
+          return { kind: 'success' as const, text: `latest verdict: ${latest.verdict}\nreport: ${latest.html}` };
+        } catch {
+          return { kind: 'error' as const, text: 'no proof reports yet — run /proofix <test> first' };
+        }
+      }
+
+      // split "base head -- test" vs "test"
+      let base = 'HEAD~1';
+      let head = 'HEAD';
+      let rest = input;
+      const sep = input.indexOf(' -- ');
+      if (sep !== -1) {
+        const left = input.slice(0, sep).trim().split(/\s+/);
+        rest = input.slice(sep + 4).trim();
+        if (left.length === 2) {
+          [base, head] = left;
+        } else if (left.length === 1) {
+          base = left[0];
+        } else {
+          return { kind: 'error' as const, text: `cannot parse revisions "${input.slice(0, sep)}" — expected "base head -- test"` };
+        }
+      }
+      // extract flags from the test tail
+      const flagMatch = (flag: string) => {
+        const m = rest.match(new RegExp(`--${flag}\\s+([^-].*?)(?=\\s+--|$)`));
+        if (m) rest = rest.replace(m[0], '').trim();
+        return m?.[1];
+      };
+      const setup = flagMatch('setup');
+      const regression = flagMatch('regression');
+      const controlRunsRaw = flagMatch('control-runs');
+      const controlRuns = controlRunsRaw ? Number.parseInt(controlRunsRaw, 10) : undefined;
+      const test = rest.trim();
+      if (!test) return { kind: 'error' as const, text: 'missing test command — e.g. /proofix HEAD~1 HEAD -- "pnpm test"' };
+
+      try {
+        const report = await verify({
+          repo,
+          base,
+          head,
+          test,
+          setup,
+          regression,
+          controlRuns,
+          timeoutMs: config.timeoutMs,
+          keepWorktrees: config.keepWorktrees,
+          allowTestChanges: config.allowTestChanges,
+        });
+        const stage = (n: string, s: { outcome: string } | null) => `${n}=${s ? s.outcome.toUpperCase() : '—'}`;
+        const text = [
+          `**${report.verdict}** (evidence: ${report.evidence})`,
+          stage('red', report.stages.red) + ' · ' + stage('green', report.stages.green) + ' · ' + stage('control', report.stages.control) + ' · ' + stage('regression', report.stages.regression),
+          '',
+          ...report.reasons.map((r) => `- ${r}`),
+          '',
+          `report: ${report.artifacts.html}`,
+        ].join('\n');
+        return { kind: 'success' as const, text };
+      } catch (err) {
+        return { kind: 'error' as const, text: `verification failed to run: ${err instanceof Error ? err.message : String(err)}` };
+      }
+    },
+  });
 }

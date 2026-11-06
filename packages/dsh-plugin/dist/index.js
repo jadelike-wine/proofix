@@ -969,7 +969,7 @@ init_types();
 import fs4 from "node:fs/promises";
 import path5 from "node:path";
 var name = "proofix";
-var inject = ["tools", "systemPrompt"];
+var inject = ["tools", "systemPrompt", "commands"];
 var Config = z.object({
   timeoutMs: z.number().min(1e4).max(30 * 6e4).default(10 * 6e4),
   keepWorktrees: z.boolean().default(false),
@@ -1182,6 +1182,82 @@ ${tail2}` };
       presentCall: (args) => ({ card: "generic", title: `ProofFix autofix round (${args.base} \u2192 ${args.head ?? "HEAD"})`, kind: "execute", rawInput: args.bug })
     })
   );
+  ctx.commands.register({
+    name: "proofix",
+    description: "Verify a bug fix: frozen acceptance tests must FAIL on base and PASS on head \u2014 verdict computed by execution, not the model.",
+    input: { hint: '[<base> <head> --] <test command>   e.g. /proofix HEAD~1 HEAD -- "node test/m.test.js"' },
+    async handler(inv) {
+      const repo = process.cwd();
+      const input = inv.rawInput.trim();
+      if (input.length === 0) {
+        return {
+          kind: "success",
+          text: "Usage:\n  /proofix <test\u2026>                     verify HEAD~1 \u2192 HEAD\n  /proofix <base> <head> -- <test\u2026>    verify explicit revisions\n  /proofix report                      show the latest proof report\nOptions: --setup <cmd> --regression <cmd> --control-runs <n>"
+        };
+      }
+      if (input === "report") {
+        try {
+          const latest = JSON.parse(await fs4.readFile(path5.join(repo, ".proofix", "reports", "latest.json"), "utf8"));
+          return { kind: "success", text: `latest verdict: ${latest.verdict}
+report: ${latest.html}` };
+        } catch {
+          return { kind: "error", text: "no proof reports yet \u2014 run /proofix <test> first" };
+        }
+      }
+      let base = "HEAD~1";
+      let head = "HEAD";
+      let rest = input;
+      const sep = input.indexOf(" -- ");
+      if (sep !== -1) {
+        const left = input.slice(0, sep).trim().split(/\s+/);
+        rest = input.slice(sep + 4).trim();
+        if (left.length === 2) {
+          [base, head] = left;
+        } else if (left.length === 1) {
+          base = left[0];
+        } else {
+          return { kind: "error", text: `cannot parse revisions "${input.slice(0, sep)}" \u2014 expected "base head -- test"` };
+        }
+      }
+      const flagMatch = (flag) => {
+        const m = rest.match(new RegExp(`--${flag}\\s+([^-].*?)(?=\\s+--|$)`));
+        if (m) rest = rest.replace(m[0], "").trim();
+        return m?.[1];
+      };
+      const setup = flagMatch("setup");
+      const regression = flagMatch("regression");
+      const controlRunsRaw = flagMatch("control-runs");
+      const controlRuns = controlRunsRaw ? Number.parseInt(controlRunsRaw, 10) : void 0;
+      const test = rest.trim();
+      if (!test) return { kind: "error", text: 'missing test command \u2014 e.g. /proofix HEAD~1 HEAD -- "pnpm test"' };
+      try {
+        const report = await verify({
+          repo,
+          base,
+          head,
+          test,
+          setup,
+          regression,
+          controlRuns,
+          timeoutMs: config.timeoutMs,
+          keepWorktrees: config.keepWorktrees,
+          allowTestChanges: config.allowTestChanges
+        });
+        const stage = (n, s) => `${n}=${s ? s.outcome.toUpperCase() : "\u2014"}`;
+        const text = [
+          `**${report.verdict}** (evidence: ${report.evidence})`,
+          stage("red", report.stages.red) + " \xB7 " + stage("green", report.stages.green) + " \xB7 " + stage("control", report.stages.control) + " \xB7 " + stage("regression", report.stages.regression),
+          "",
+          ...report.reasons.map((r) => `- ${r}`),
+          "",
+          `report: ${report.artifacts.html}`
+        ].join("\n");
+        return { kind: "success", text };
+      } catch (err) {
+        return { kind: "error", text: `verification failed to run: ${err instanceof Error ? err.message : String(err)}` };
+      }
+    }
+  });
 }
 export {
   Config,
