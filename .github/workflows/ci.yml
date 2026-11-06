@@ -19,8 +19,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r run typecheck
+      # Build first: @proofix/cli resolves @proofix/core's emitted .d.ts.
       - run: pnpm -r run build
+      - run: pnpm -r run typecheck
       - run: pnpm -r run test
       - name: demo verification (end-to-end)
         run: node packages/cli/dist/bin.js demo
